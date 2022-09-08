@@ -1,12 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { useRef } from "react";
-import { React, useState} from "react";
+import { useRef, React, useState } from "react";
 import { Button } from "react-bootstrap";
-import { Spinner } from "react-bootstrap";
 import ProductItemShop from "./ProductItemShop";
 
-
-const SlideProduct = observer( ({ title, products }) => {
+const SlideProduct = observer(({ title, products }) => {
   const [sliderTranslate, setSliderTranslate] = useState(0);
   const [sliderRightBtn, setSliderRightBtn] = useState(true);
   const slider = useRef(null);
@@ -24,9 +21,6 @@ const SlideProduct = observer( ({ title, products }) => {
     } else {
       setSliderTranslate(() => sliderTranslate - k);
     }
-    
-
-    // slideBtnCompare();
   };
 
   const slideBtnCompare = () => {
@@ -37,34 +31,6 @@ const SlideProduct = observer( ({ title, products }) => {
     setSliderTranslate(() => sliderTranslate - (width + 150));
     setSliderRightBtn(false);
   };
-
-  // const slideBtnCompare = () => {
-  //   let width = slider.current.clientWidth - sliderTranslate;
-  //   if (width < sliderWrapper.current.clientWidth + 100) {
-  //     setSliderLeftBtn(true);
-  //   }
-
-  //   if (
-  //     width <
-  //     sliderWrapper.current.clientWidth + slider.current.clientWidth
-  //   ) {
-  //     setSliderRightBtn(false);
-  //   }
-  // };
-
-  // const prodItemShopdesc = (body)=>{
-  //     // console.log(body);
-  //     return body.map((item)=>{
-  //       return Object.values(item) + ' '
-  //     })
-       
-  // }
-  // if(loading){
-  //   return (
-  //     <div style={{alignItems: 'center',  justifyContent: 'center', height: '100vh'}} className='d-flex'>
-  //       <Spinner animation={'grow'}/>
-  //     </div>)
-  //   }
 
   return (
     <div className="slide-product ">
@@ -80,12 +46,7 @@ const SlideProduct = observer( ({ title, products }) => {
                   {title}
                 </span>
               </h3>
-              <a
-                href="#"
-                className="ms-auto me-0 btn btn-danger btn-sm shadow-md rounded"
-              >
-                Ählisini aç
-              </a>
+
             </div>
 
             <div className="product-slider position-relative">
@@ -94,16 +55,15 @@ const SlideProduct = observer( ({ title, products }) => {
                 className="products d-flex"
                 ref={slider}
               >
-                {
-                  products.map((item)=>
-                    <ProductItemShop product = {item} key={item.id}/>
-                    // console.log(item.rating)
+                {products.map(
+                  (item) => (
+                    <ProductItemShop product={item} key={item.id} />
                   )
-                }
+                )}
               </div>
             </div>
             <div className="slick-right">
-              <Button onClick={rightSlide} variant={'none'}>
+              <Button onClick={rightSlide} variant={"none"}>
                 {">"}
               </Button>
             </div>

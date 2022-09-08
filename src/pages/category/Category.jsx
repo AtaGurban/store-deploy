@@ -1,122 +1,317 @@
-import React, { useEffect, useState, useContext } from "react";
-import { fetchDevices } from "../../http/deviceAPI";
+import React, { useEffect, useState, useContext, useRef } from "react";
+import { fetchDevices, fetchSearchDevices } from "../../http/deviceAPI";
 import ProductItemSearch from "../../components/ProductItemSearch";
 import "./category.css";
 import { useParams } from "react-router-dom";
-import { Accordion, Card, Image, Spinner } from "react-bootstrap";
+import { Accordion, Card, Image, Spinner, Pagination } from "react-bootstrap";
 import { Context } from "../..";
 import { observer } from "mobx-react-lite";
 
 const Category = observer(() => {
   const params = useParams();
-  const [queryProduct, setQueryProduct] = useState({});
+  const [queryProduct, setQueryProduct] = useState([]);
+  const [productCountPage, setProductCountPage] = useState(0);
+  const [firstFilterBool, setFirstFilterBool] = useState(false);
+  const [paginationBool, setPaginationBool] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reqTitle, setReqTitle] = useState("");
   const [reqValue, setReqValue] = useState("");
-  const [priceFilteer, setPriceFilteer] = useState([0, 100000]);
+  const [page, setPage] = useState(1);
+  const [priceFilteer, setPriceFilteer] = useState([0, 10000000]);
   const [filteerBrand, setFilteerBrand] = useState([]);
-  const [deviceInfoState, setDeviceInfoState] = useState({});
-  const [productSort, setProductSort] = useState(null);
+  const [deviceInfoState, setDeviceInfoState] = useState([]);
+  const [deviceInfoTitle, setDeviceInfoTitle] = useState([]);
+  const [deviceInfoDescription, setDeviceInfoDescription] = useState({});
+  const [productSort, setProductSort] = useState(true);
+  const [applyFilteerState, setApplyFilteerState] = useState("");
   const { brand, type } = useContext(Context);
-  let deviceInfo = {};
-  let categoryNumbers = type.Category[0];
+  // const lastElement = useRef();
+  // const observer = useRef();
+  const [applyFilteerBtn, setApplyFilteerBtn] = useState(
+    "apply-filters-float-btn"
+  );
 
-  useEffect(async () => {
-    let currentCategory = categoryNumbers.filter((i) => {
-      return i.id == params.id;
-    })[0];
-    for (let key in currentCategory) {
-      if (currentCategory[key]) {
-        setReqTitle(key);
-        setReqValue(currentCategory[key]);
-      }
-    }
+  let categoryNumbers = type.Category[0];
+  // useEffect(() => {
+  //   if (queryProduct) {
+  //     productSortFunc(productSort);
+  //   }
+  // }, [queryProduct, productSort]);
+
+  const firstFetchDevices = async () => {
     if (reqTitle && reqValue) {
-      await fetchDevices(`?${reqTitle}=${reqValue}`)
-        .then((data) => setQueryProduct(data))
+      setLoading(true)
+      console.log('first');
+      await fetchDevices(`?page=${page}&${reqTitle}=${reqValue}&sort=${productSort}&minPrice=${priceFilteer[0]}&maxPrice=${priceFilteer[1]}`)
+        .then((data) => {
+          setQueryProduct([...data.rows]);
+          setProductCountPage(data.count);
+          setDeviceInfoDescription(data.deviceInfoDescription);
+          setDeviceInfoTitle(data.deviceInfoTitle);
+        })
         .finally(() => setLoading(false));
     }
-  }, [reqTitle, reqValue, params]);
+  };
 
-  useEffect(async () => {
-    if (filteerBrand.length !== 0) {
-      await fetchDevices(
-        `?${reqTitle}=${reqValue}&brandId=${filteerBrand.join("%")}`
-      )
-        .then((data) => setQueryProduct(data))
+  useEffect(()=>{
+    setFirstFilterBool(true)
+  }, [deviceInfoState])
+
+
+  // const paginationFetchDevices = async () => {
+  //   if (reqTitle && reqValue) {
+  //     console.log("pagination");
+  //     await fetchDevices(`?page=${page}&${reqTitle}=${reqValue}`)
+  //       .then((data) => {
+  //         setQueryProduct([...queryProduct, ...data.rows]);
+  //         setProductCountPage(data.count.length);
+  //       })
+  //       .finally(() => setLoading(false));
+  //   }
+  // };
+
+  let paginationLimit = 5;
+  let items = [];
+  for (let number = 1; number <= Math.ceil(productCountPage / paginationLimit); number++) {
+    items.push(
+      <Pagination.Item
+        onClick={(e) => setPage(number)}
+        key={number}
+        active={number === page}
+      >
+        {number}
+      </Pagination.Item>
+    );
+  }
+
+  const createQueryFetchAndFetchDevices = async () => {
+    if (params.id.includes("query=")) {
+      setLoading(true)
+      console.log('search');
+      await fetchSearchDevices(`${params.id.slice(6)}&page=${page}&sort=${productSort}`)
+        .then((data) => {
+          setQueryProduct(data.rows);
+          setProductCountPage(data.count);
+          setDeviceInfoDescription(data.deviceInfoDescription);
+          setDeviceInfoTitle(data.deviceInfoTitle);
+        })
         .finally(() => setLoading(false));
     } else {
-      await fetchDevices(`?${reqTitle}=${reqValue}`)
-        .then((data) => setQueryProduct(data))
-        .finally(() => setLoading(false));
+      let currentCategory = categoryNumbers.filter((i) => {
+        return i.id == params.id;
+      })[0];
+      for (let key in currentCategory) {
+        if (currentCategory[key]) {
+          setReqTitle(key);
+          setReqValue(currentCategory[key]);
+        }
+      }
+      firstFetchDevices();
     }
+  };
+
+  // console.log(queryProduct);
+
+  useEffect(() => {
+    setQueryProduct([]);
+    setPage(1);
+    firstFetchDevices();
+  }, [reqTitle, reqValue]);
+  useEffect(async () => {
+    setLoading(false);
+    setPage(1);
+    setQueryProduct([]);
+    await createQueryFetchAndFetchDevices();
+  }, [params]);
+
+  useEffect(async () => {
+    await startFilteer();
+  }, [page]);
+
+  useEffect(async () => {
+    startFilteer();
   }, [filteerBrand]);
 
-  useEffect(() => {}, [queryProduct]);
+  // useEffect(() => {
+  //   if (queryProduct?.length > 0) {
+  //     setDeviceInfoTitle([]);
+  //     setDeviceInfoDescription([]);
+  //     let arrTitle = [];
+  //     let arrDescription = [];
+  //     queryProduct?.map((i) => {
+  //       i.more_info?.map((j) => {
+  //         let newElem = { id: j.id, title: j.title };
+  //         const bool =
+  //           arrTitle.filter((obj) => {
+  //             return (
+  //               obj?.title?.trim().toLowerCase() ===
+  //               j?.title?.trim().toLowerCase()
+  //             );
+  //           }).length === 0;
+  //         if (bool) {
+  //           arrTitle.push(newElem);
+  //           setDeviceInfoTitle((deviceInfoTitle) => [
+  //             ...deviceInfoTitle,
+  //             newElem,
+  //           ]);
+  //         }
+  //       });
+  //     });
+  //     queryProduct?.map((i) => {
+  //       i.more_info?.map((j) => {
+  //         let newElem = {
+  //           id: j.id,
+  //           title: j.title,
+  //           description: j.description,
+  //         };
+  //         const bool =
+  //           arrDescription.filter((obj) => {
+  //             return (
+  //               obj?.description?.toLowerCase().trim() ===
+  //               j?.description?.toLowerCase().trim()
+  //             );
+  //           }).length === 0;
+  //         if (bool) {
+  //           arrDescription.push(newElem);
+  //           setDeviceInfoDescription((deviceInfoDescription) => [
+  //             ...deviceInfoDescription,
+  //             newElem,
+  //           ]);
+  //         }
+  //       });
+  //     });
+  //   } else {
+  //     setDeviceInfoTitle([]);
+  //     setDeviceInfoDescription([]);
+  //   }
+  // }, [queryProduct]);
 
-  console.log(queryProduct);
-
-  queryProduct.rows?.map((i) => {
-    i.subDevice?.map((j) => {
-      j.info?.map((k) => {
-        let obj = {}
-        // setDeviceInfoState(()=>deviceInfoState[k.title] = [])
-        deviceInfo[k.title] = new Set();
-      });
-    });
-  });
-
-  queryProduct.rows?.map((i) => {
-    i.subDevice?.map((j) => {
-      j.info?.map((k) => {
-        deviceInfo[k.title].add(k.description);
-      });
-    });
-  });
-
-  const setToArr = (set) => {
-    let arr = [];
-    for (let value of set) arr.push(value);
-    return arr;
+  const bodyFilteerFunc = (bodyTitle, bodyValue) => {
+    const bool =
+      deviceInfoState.filter((i) => {
+        return (
+          i.title === bodyTitle.title && i.description === bodyValue.description
+        );
+      }).length === 0;
+    bool
+      ? setDeviceInfoState((deviceInfoState) => [
+          ...deviceInfoState,
+          {
+            id: Date.now(),
+            title: bodyTitle.title,
+            description: bodyValue.description,
+          },
+        ])
+      : setDeviceInfoState((deviceInfoState) =>
+          deviceInfoState.filter(
+            (item) =>
+              item.title != bodyTitle.title ||
+              item.description != bodyValue.description
+          )
+        );
+    applyFilteer(bodyValue.description);
   };
 
-  console.log(deviceInfoState);
-  // useEffect(() => {
-  //   setBodyFilteerState(obj);
-  // }, []);
+  const startFilteer = async () => {
+    if (deviceInfoState.length > 0 || filteerBrand.length > 0 || ((priceFilteer[0] != 0) || (priceFilteer[1] < 10000000))) {
+      let queryRequest =
+        filteerBrand.length === 0
+          ? `?${reqTitle}=${reqValue}&`
+          : `?${reqTitle}=${reqValue}&brandId=${filteerBrand.join("%")}&`;
+      let infoFilteer = {};
+      deviceInfoState.map((i) => {
+        infoFilteer[i.title] = [];
+      });
+      deviceInfoState.map((i) => {
+        infoFilteer[i.title].push(i.description);
+      });
+      let result = "";
+      for (const key in infoFilteer) {
+        result = result + `filter_${key}=${infoFilteer[key].join("%")}&`;
+      }
+      const queryBody = encodeURI(result);
+      queryRequest = queryRequest + queryBody;
 
-  // useEffect(() => {
-  //   let priceFilteerArr = products.filter(
-  //     (item) => item.price[0] > priceFilteer[0] && item.price[0] < priceFilteer[1]
-  //   );
-  //   let filteerBrandArr = filteerBrandFunc();
-  //   var priceAndBrandFilteerArr = intersectionTwoArray(
-  //     priceFilteerArr,
-  //     filteerBrandArr,
-  //     queryProduct
-  //   );
-  //   setQueryProduct(
-  //     intersectionTwoArray(
-  //       priceAndBrandFilteerArr,
-  //       bodyFilteerProduct,
-  //       queryProduct
-  //     )
-  //   );
-  // }, [priceFilteer, filteerBrand, bodyFilteerProduct]);
+      queryRequest =
+        queryRequest +
+        `minPrice=${priceFilteer[0]}&maxPrice=${priceFilteer[1]}&page=${page}&sort=${productSort}`;
+        
+        console.log(firstFilterBool);
+      if (firstFilterBool){
+        setPage(1);
+        setFirstFilterBool(false)
+      }
+      await fetchDevices(queryRequest).then((data) => {
+        setQueryProduct(data.rows);
+        setProductCountPage(data.count);
+        setDeviceInfoDescription(data.deviceInfoDescription);
+        setDeviceInfoTitle(data.deviceInfoTitle);
+      });
+    } else {
+      firstFetchDevices();
+    }
+  };
 
-  const priceFilteerFunc = (value) => {
+  const priceFilteerFunc = (node, value) => {
     setPriceFilteer((priceFilteer) => (priceFilteer = value));
+    applyFilteer(node);
   };
-
+  const elem = (
+    <div
+      onClick={() => {startFilteer(); setApplyFilteerBtn((applyFilteerBtn) => applyFilteerBtn + "d-none");}}
+      className={applyFilteerBtn}
+      data-label="Gözle"
+    ></div>
+  );
+  const applyFilteer = (node) => {
+    setApplyFilteerState(node?.id ? node.id : node);
+    setApplyFilteerBtn("apply-filters-float-btn");
+    setTimeout(() => {
+      setApplyFilteerBtn((applyFilteerBtn) => applyFilteerBtn + "d-none");
+    }, 3000);
+  };
 
   // const productSortFunc = (value) => {
   //   if (value != "null") {
   //     setProductSort(value);
-  //     productSort
-  //       ? setQueryProduct([...queryProduct].sort((a, b) => b.price - a.price))
-  //       : setQueryProduct([...queryProduct].sort((a, b) => a.price - b.price));
+  //     if (sortActive) {
+  //       productSort === "arzan"
+  //         ? setSortedProduct(
+  //             [...queryProduct].sort((a, b) => a.price - b.price)
+  //           )
+  //         : setSortedProduct(
+  //             [...queryProduct].sort((a, b) => b.price - a.price)
+  //           );
+  //     } else {
+  //       productSort === "arzan"
+  //         ? setSortedProduct([...queryProduct])
+  //         : setSortedProduct([...queryProduct]);
+  //     }
   //   }
   // };
+
+  useEffect(() => {
+    if (Math.ceil(productCountPage / 10) >= page + 1) {
+      setPaginationBool(true);
+    }
+  }, [productCountPage]);
+
+  useEffect(()=>{
+    firstFetchDevices()
+  }, [productSort])
+
+  // useEffect(() => {
+  //   if (!loading) {
+  //     var callback = function (entries, observer) {
+  //       if (entries[0].isIntersecting && paginationBool) {
+  //         setPage(page + 1);
+  //         setPaginationBool(false);
+  //       }
+  //     };
+  //     observer.current = new IntersectionObserver(callback);
+  //     observer.current.observe(lastElement.current);
+  //   }
+  // }, [ productCountPage]);
 
   const pushArrayBrand = (value, id) => {
     value.classList.toggle("active-check");
@@ -129,126 +324,6 @@ const Category = observer(() => {
       });
     } else setFilteerBrand([...filteerBrand, id]);
   };
-
-  // const filteerBrandFunc = () => {
-  //   let arr = [];
-  //   if (filteerBrand.length === 0) {
-  //     return products;
-  //   }
-  //   filteerBrand.map((brandItem) => {
-  //     products.map((product) => {
-  //       if (brandItem === brand.Brands[product.brandId].name) {
-  //         arr.push(product);
-  //       }
-  //     });
-  //   });
-  //   return arr;
-  // };
-
-  // const intersectionTwoArray = (a, b, c) => {
-  //   if (a.length == 0 && b.length == 0) {
-  //     return b;
-  //   }
-  //   // console.log(a, b);
-  //   if (a.length === 0) {
-  //     return a;
-  //   }
-
-  //   if (b.length === 0) {
-  //     return a;
-  //   }
-  //   let result = [];
-  //   a.map((itemOne) => {
-  //     b.map((itemTwo) => {
-  //       if (itemOne === itemTwo) {
-  //         result.push(itemOne);
-  //       }
-  //     });
-  //   });
-
-  //   return result;
-  // };
-
-  // const bodyFilteerFunc = () => {
-  //   let bodyTypeSet = new Set();
-  //   products.map((product) => {
-  //     for (let key in product.body) {
-  //       bodyTypeSet.add(key);
-  //     }
-  //   });
-
-  //   let bodyInfo = [];
-  //   bodyTypeSet.forEach((value) => {
-  //     let set = new Set();
-  //     let arr = [];
-  //     products.map((product) => {
-  //       if (product.body[value]) {
-  //         Array.isArray(product.body[value]) ? product.body[value].map(item => set.add(item)) : set.add(product.body[value]);
-  //       }
-  //     });
-  //     // console.log(set);
-  //     set.forEach((value) => {
-  //       arr.push(value);
-  //     });
-  //     bodyInfo.push(arr);
-  //   });
-  //   let bodyType = [];
-  //   bodyTypeSet.forEach((value) => {
-  //     bodyType.push(value);
-  //   });
-
-  //   return { bodyType, bodyInfo };
-  // };
-
-  // let bodyFilteer = bodyFilteerFunc();
-
-  // bodyFilteer.bodyType.map((item) => {
-  //   obj[item] = null;
-  // });
-
-  // const bodyFilteerFuncTwo = (element, typeFilteer, value) => {
-  //   element.classList.toggle("active-check");
-  //   let boolIndex = element.classList.contains("active-check");
-  //   let obj = bodyFilteerState;
-
-  //   if (!boolIndex) {
-  //     if (!Array.isArray(obj[typeFilteer])) {
-  //       obj[typeFilteer] = null;
-  //     } else {
-  //       obj[typeFilteer] = obj[typeFilteer].filter((item) => {
-  //         return item !== value;
-  //       });
-  //     }
-  //   } else {
-  //     if (!Array.isArray(obj[typeFilteer])) {
-  //       obj[typeFilteer] = [value];
-  //     } else {
-  //       obj[typeFilteer].push(value);
-  //     }
-  //   }
-
-  //   setBodyFilteerState(obj);
-  //   let arr = [];
-  //   for (let key in bodyFilteerState) {
-  //     if (bodyFilteerState[key]) {
-  //       products.map((product) => {
-  //         bodyFilteerState[key].map((item) => {
-  //           if (product.body[key] == item && !arr.includes(product)) {
-  //             arr.push(product);
-  //           }
-  //         });
-  //       });
-  //     }
-  //   }
-
-  //   setBodyFilteerProduct(arr);
-  //   // console.log(arr);
-  // };
-
-  // useEffect(()=>{
-  //   productSort ? setQueryProduct([...queryProduct].sort((a, b) => b.price - a.price )) :  setQueryProduct([...queryProduct].sort((a, b) => a.price - b.price ))
-  //   console.log(queryProduct);
-  // }, [priceFilteer, filteerBrand, bodyFilteerProduct])
 
   if (loading) {
     return (
@@ -269,68 +344,82 @@ const Category = observer(() => {
     <div className="container row mx-auto mt-5">
       <div className="col-3  px-3 py-3 mt-5 product-feelteer">
         {/* <h4>Filtirle</h4> */}
-        <div>
+        <div className="position-relative">
           <Accordion defaultActiveKey={["0"]} alwaysOpen>
             <Accordion.Item eventKey="0">
               <Accordion.Header>Baha</Accordion.Header>
               <Accordion.Body>
+                {applyFilteerState === "input-one" ? elem : null}
                 <p className="mb-2">
                   <input
                     className="me-3 form-check-input"
+                    id="input-one"
                     type="radio"
                     name="product-price"
                     value={[0, 100000]}
-                    onChange={(e) => priceFilteerFunc([0, 100000])}
+                    onChange={(e) => priceFilteerFunc(e.target, [0, 100000])}
                   />
                   Hemmesi
                 </p>
+                {applyFilteerState === "input-two" ? elem : null}
                 <p className="mb-2">
                   <input
                     className="me-3 form-check-input"
+                    id="input-two"
                     type="radio"
                     name="product-price"
                     value={[0, 1000]}
-                    onChange={(e) => priceFilteerFunc([0, 1000])}
+                    onChange={(e) => priceFilteerFunc(e.target, [0, 1000])}
                   />
                   0 tmt - 1000 tmt
                 </p>
+                {applyFilteerState === "input-three" ? elem : null}
                 <p className="mb-2">
                   <input
                     className="me-3 form-check-input"
+                    id="input-three"
                     type="radio"
                     name="product-price"
                     value={[1000, 5000]}
-                    onChange={(e) => priceFilteerFunc([1000, 5000])}
+                    onChange={(e) => priceFilteerFunc(e.target, [1000, 5000])}
                   />
                   1000 tmt - 5000 tmt
                 </p>
+                {applyFilteerState === "input-four" ? elem : null}
                 <p className="mb-2">
                   <input
                     className="me-3 form-check-input"
+                    id="input-four"
                     type="radio"
                     name="product-price"
                     value={[5000, 10000]}
-                    onChange={(e) => priceFilteerFunc([5000, 10000])}
+                    onChange={(e) => priceFilteerFunc(e.target, [5000, 10000])}
                   />
                   5000 tmt - 10000 tmt
                 </p>
+                {applyFilteerState === "input-five" ? elem : null}
                 <p className="mb-2">
                   <input
                     className="me-3 form-check-input"
+                    id="input-five"
                     type="radio"
                     name="product-price"
                     value={[10000, 20000]}
-                    onChange={(e) => priceFilteerFunc([10000, 20000])}
+                    onChange={(e) => priceFilteerFunc(e.target, [10000, 20000])}
                   />
                   10000 tmt - 20000 tmt
                 </p>
+                {applyFilteerState === "input-six" ? elem : null}
                 <p className="mb-2">
                   <input
                     className="me-3 form-check-input"
+                    id="input-six"
                     type="radio"
                     name="product-price"
                     value={[20000, 100000]}
-                    onChange={(e) => priceFilteerFunc([20000, 100000])}
+                    onChange={(e) =>
+                      priceFilteerFunc(e.target, [20000, 100000])
+                    }
                   />
                   20000 tmt - 100000 tmt
                 </p>
@@ -356,38 +445,54 @@ const Category = observer(() => {
               </Accordion.Body>
             </Accordion.Item>
           </Accordion> */}
-          {Object.keys(deviceInfo).map((i) => (
+          {deviceInfoTitle.map((i) => (
             <Accordion
-              key={i}
+              key={i.id}
               className="mt-1"
               defaultActiveKey={["0"]}
               alwaysOpen
             >
               <Accordion.Item eventKey="0">
-                <Accordion.Header>{i}</Accordion.Header>
+                <Accordion.Header>{i.title}</Accordion.Header>
                 <Accordion.Body>
-                  {setToArr(deviceInfo[i]).sort((a, b)=> parseInt(a) - parseInt(b)).map((item) => (
-                    <p key={item} className="mb-2">
-                      <input
-                        className="me-3 form-check-input"
-                        type="checkbox"
-                        name={item}
-                        value={item}
-                        // onChange={(e) =>
-                        //   setDeviceInfoState((deviceInfoState) =>
-                        //      {...deviceInfoState}
-                        //   )
-                        // }
-                      />
-                      {item}
-                    </p>
-                  ))}
+                  {deviceInfoDescription
+                    .filter((d) => d.title === i.title)
+                    .sort((a, b) => parseInt(a) - parseInt(b))
+                    .map((item) => (
+                      <div key={item.id} className="mb-2">
+                        {applyFilteerState === item.description ? elem : null}
+                        <input
+                          className="me-3 form-check-input"
+                          type="checkbox"
+                          // checked={filterReset ? false : undefined}
+                          name={item.description}
+                          value={item.description}
+                          onChange={(e) => bodyFilteerFunc(i, item)}
+                        />
+                        {item.description}
+                      </div>
+                    ))}
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
           ))}
-          <div className="filter-btn mt-3 d-block text-end">
-            <button className="btn btn-warning ">Gözle</button>
+          <div className="mt-3 d-block text-center">
+            <button
+              onClick={() => startFilteer()}
+              className="btn filter-btn w-25 mx-3"
+            >
+              Gözle
+            </button>
+            {/* <button
+              onClick={() => {
+                setFilterReset(true);
+                setDeviceInfoState([]);
+                // setFilterReset(false)
+              }}
+              className="btn btn-primary w-25 mx-3"
+            >
+              Poz
+            </button> */}
           </div>
         </div>
       </div>
@@ -421,22 +526,33 @@ const Category = observer(() => {
           ))}
         </div>
 
-        {/* <div className="product-sort mb-3">
+        <hr />
+        <div className="product-sort mb-3">
           <select
-            onChange={(e) => productSortFunc(e.target.value)}
+            onChange={(e) => {
+              setPage(1)
+              setProductSort(e.target.value)
+            }}
             className="form-select"
             aria-label="Default select example"
           >
-            <option value={"null"}>Tertipleme</option>
-            <option value={"false"}>Arzandan gymmada</option>
-            <option value={"true"}>Gymmatdan arzana</option>
+            <option disabled value={"null"}>
+              Tertipleme
+            </option>
+            <option value={true}>Arzandan gymmada</option>
+            <option value={false}>Gymmatdan arzana</option>
           </select>
-        </div> */}
-        <hr />
+        </div>
         <div className="d-flex category-products">
-          {queryProduct?.rows?.map((item) => (
+          {queryProduct.map((item) => (
             <ProductItemSearch product={item} key={item.id} />
           ))}
+          <div className="mt-3">
+            <Pagination style={{ justifyContent: "center" }}>
+              {items}
+            </Pagination>
+          </div>
+          {/* <div ref={lastElement} className="pagination-block"></div> */}
         </div>
       </div>
     </div>

@@ -156,7 +156,7 @@ const ModalAddDevice = ({ show, onHide }) => {
                 <h4 className="text-center mb-2">
                   Harydyň kiçi beýanyny görkeziň
                 </h4>
-                <div class="input-group">
+                <div className="input-group">
                   <textarea
                     style={{ height: "150px", maxHeight: "350px" }}
                     className="form-control"

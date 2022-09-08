@@ -1,4 +1,4 @@
-import { React, useContext, useState, useEffect } from "react";
+import { React, useContext, useState } from "react";
 import { Context } from "..";
 import ProductItemBasket from "../components/ProductItemBasket";
 import { observer } from "mobx-react-lite";
@@ -6,7 +6,7 @@ import { observer } from "mobx-react-lite";
 
 const Basket = observer(() => {
   const { user } = useContext(Context);
-  let basketProd = user.basketProd
+  // let basketProd = user.basketProd
   const [summ, setSumm] = useState(0)
 
 
@@ -20,10 +20,7 @@ const Basket = observer(() => {
   const pushSumm = (newCount, oldCount, price)=>{
    
   setSumm((summ) => summ = summ - oldCount * price + newCount * price) 
-  // console.log(newSumm, oldSumm);
   }
-
-  // console.log( summ);
 
 
   return (
@@ -37,7 +34,7 @@ const Basket = observer(() => {
             {user.basketProd.length !== 0 ? (
               // <ProductItemBasket/>
 
-              user.basketProd.map((item) => <ProductItemBasket product={item} key={item.id} pushSumm = {pushSumm}/>)
+              user?.basketProd?.map((item) => <ProductItemBasket product={item} key={item.id} pushSumm = {pushSumm}/>)
             ) : (
               <div className="d-block" style={{ textAlign: "center" }}>
                 <h3 className="c-bold"> Sebet boş </h3>

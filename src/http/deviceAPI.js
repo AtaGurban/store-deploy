@@ -8,6 +8,12 @@ export const createDevice = async (device)=>{
 
 export const fetchDevices = async (query)=>{
     const {data} = (query !== '?') ? await $host.get('api/device' + query) : await $host.get('api/device')
+    console.log(query, data);
+    return data
+}
+
+export const fetchSearchDevices = async (query)=>{
+    const {data} = await $host.get('api/device?query=' + query) 
     return data
 } 
 

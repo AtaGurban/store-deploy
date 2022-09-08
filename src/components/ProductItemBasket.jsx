@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 
 const ProductItemBasket = observer(({ product, pushSumm }) => {
   const { user } = useContext(Context);
-  // const [countBool, setCountBool] = useState(true)
   const [productCount, setProductCount] = useState(1);
   const [oldProductCount, setOldProductCount] = useState(0);
 
@@ -16,17 +15,17 @@ const ProductItemBasket = observer(({ product, pushSumm }) => {
     // setCountBool(bool)
   };
 
+
+
   useEffect(() => {
     pushSumm(productCount, oldProductCount, product.price);
     setOldProductCount(productCount);
-    console.log(productCount, oldProductCount);
   }, [productCount]);
 
-  const removeBasketProduct = ()=>{
-    user.removeBasketProd(product)
-    pushSumm(0, oldProductCount, product.price)
-  }
-  // summProductArr(productCount, product.price)
+  const removeBasketProduct = () => {
+    user.removeBasketProd(product);
+    pushSumm(0, oldProductCount, product.price);
+  };
 
   const productDesc = (obj) => {
     let arr = [];
@@ -35,11 +34,16 @@ const ProductItemBasket = observer(({ product, pushSumm }) => {
     }
     return arr.join(" ");
   };
+
   return (
     <div className="product-item-basket mb-1">
       <div className="product-basket-content row">
-        <div className="col-3">
-          <img src={product.img[0]} alt="" className="product-basket-img" />
+        <div className="col-3 text-center">
+          <img
+            src={`${process.env.REACT_APP_API_URL}/${product.deviceImg[0].name}`}
+            alt=""
+            className="product-basket-img"
+          />
         </div>
         <div className="col-9 d-flex flex-column">
           <Link to={`/product/detail/${product.id}`}>
@@ -52,10 +56,7 @@ const ProductItemBasket = observer(({ product, pushSumm }) => {
               <div className="">
                 <LikeProduct product={product} />
               </div>
-              <div
-                onClick={removeBasketProduct}
-                className="ms-3 basket-remove"
-              >
+              <div onClick={removeBasketProduct} className="ms-3 basket-remove">
                 <i className="fas fa-trash-alt me-2"></i> Aýyr
               </div>
             </div>

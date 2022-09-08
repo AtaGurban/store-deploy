@@ -33,8 +33,6 @@ const ModalEditDevice = ({ currentEditDevice, show, onHide }) => {
     }
   }, [currentEditDevice]);
 
-  console.log(currentEditDevice);
-
   const selectFileOne = (e) => {
     setImg(e.target.files[0]);
   };

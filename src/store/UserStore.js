@@ -1,11 +1,12 @@
 import { makeAutoObservable } from "mobx";
+import { deleteBasketDevice } from "../http/basketAPI";
 
 export class UserStore {
   constructor() {
     this._isAuth = false;
-    
     this._favoriteProd = [];
     this._basketProd = [];
+    // this._storeLoading = false
     makeAutoObservable(this);
   }
 
@@ -15,6 +16,14 @@ export class UserStore {
   setUser(user) {
     this._user = user;
   }
+
+  // setStoreLoading(bool){
+  //   this._storeLoading = bool
+  // }
+
+  // get storeLoading(){
+  //   return this._storeLoading
+  // }
 
   get isAuth() {
     return this._isAuth;
@@ -53,7 +62,11 @@ export class UserStore {
   }
 
   removeBasketProd(basketProd) {
-
+    deleteBasketDevice(basketProd.id)
     return this._basketProd = this._basketProd.filter((item) => item.id !== basketProd.id);
+  }
+
+  clearBasketProd(){
+    return this._basketProd = [];
   }
 }

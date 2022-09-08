@@ -1,22 +1,48 @@
-import { React, useState, useContext } from "react";
+import { React, useState, useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Context } from "..";
 import LikeProduct from "./LikeProduct";
 import { Card } from "react-bootstrap";
-const ProductItemSearch = ({ product }) => {
+import { createBasketDevice } from "../http/basketAPI";
+import { observer } from "mobx-react-lite";
+import { toJS } from "mobx";
+
+const ProductItemSearch = observer(({ product }) => {
   const { user } = useContext(Context);
+
   const [currentSubDevice, setCurrentSubDevice] = useState(
     product?.subDevice[0]
   );
-  const [clickBasket, setClickBasket] = useState(false);
+  const [basketProd, setBasketProd] = useState(false);
+  const [clickBasket, setClickBasket] = useState(basketProd);
 
   const clickBasketPush = () => {
+    let prodPrice =
+      currentSubDevice !== undefined ? currentSubDevice.price : product?.price;
+
+    let clone = {}
+    Object.assign(clone, product, {price: prodPrice})
     if (!clickBasket) {
-      user.setBasketProd(product);
+      user.setBasketProd(clone);
     }
 
+    if (user.user.id) {
+      const formData = new FormData();
+      formData.append("userId", user.user.id);
+      formData.append("deviceId", product.id);
+      formData.append("prodPrice", prodPrice);
+      createBasketDevice(formData);
+    }
     setClickBasket(true);
   };
+
+  useEffect(() => {
+    toJS(user.basketProd).map((i) => {
+      if (i.id === product.id) {
+        setBasketProd(true);
+      }
+    });
+  }, [toJS(user.basketProd)]);
 
   return (
     <div className="product-item-search mb-3">
@@ -88,10 +114,15 @@ const ProductItemSearch = ({ product }) => {
             <div className="d-flex col-4">
               <LikeProduct product={product} />
               <div className="product-price-search">
-                <p>{currentSubDevice !== undefined ? currentSubDevice.price : product?.price} TMT</p>
-                {clickBasket ? (
+                <p>
+                  {currentSubDevice !== undefined
+                    ? currentSubDevice.price
+                    : product?.price}{" "}
+                  TMT
+                </p>
+                {basketProd ? (
                   <button disabled className="btn btn-danger  p-1">
-                    <i className="fas fa-shopping-basket"></i>
+                    <i className="fas fa-shopping-basket me-2"></i>
                     Sebetde
                   </button>
                 ) : (
@@ -110,6 +141,6 @@ const ProductItemSearch = ({ product }) => {
       </div>
     </div>
   );
-};
+});
 
 export default ProductItemSearch;

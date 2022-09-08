@@ -58,7 +58,7 @@ const ModalNav = ({
       <div
         className={rootClasses}
         onClick={() => setModalVisible(false)}
-        onMouseMove={(e) => setModalVisible(false)}
+        // onMouseMove={(e) => setModalVisible(false)}
       >
         <div
           className="modal-nav"
@@ -70,14 +70,14 @@ const ModalNav = ({
               {arrayLinks.map((item) => 
                 <ul key={item.id} className="category-title-link">
                   <li>
-                    <Link key={item.id} className="c-bold" to={`product/${clickTitleTypeCategory(item.id)}`}>
+                    <Link key={item.id} onClick={(e)=>setModalVisible(false)} className="c-bold" to={`product/${clickTitleTypeCategory(item.id)}`}>
                       {item.name}
                     </Link>
                   </li>
 
                   {subCategoryItems[item.name].map((link, index) => (
                         <li key={link.id}>
-                          <Link  to={`product/${clickSubTypeCategory(link.id)}`}>{link.name}</Link>
+                          <Link onClick={(e)=>setModalVisible(false)}  to={`product/${clickSubTypeCategory(link.id)}`}>{link.name}</Link>
                         </li>
                       ))
                     }

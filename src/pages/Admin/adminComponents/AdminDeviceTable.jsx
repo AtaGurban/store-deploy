@@ -5,7 +5,7 @@ import { Context } from "../../..";
 import { Link } from "react-router-dom";
 import ModalEditDevice from "./ModalEditDevice";
 
-const AdminDeviceTable = ({ queryParams }) => {
+const AdminDeviceTable = () => {
   const [paginationActive, setPaginationActive] = useState(1);
   const [devices, setDevices] = useState([]);
   const [modalEditDeviceVisible, setModalEditDeviceVisible] = useState(false);
@@ -13,17 +13,10 @@ const AdminDeviceTable = ({ queryParams }) => {
   const { type, brand } = useContext(Context);
   let queryString = `?page=${paginationActive}`;
 
-  //  console.log(queryString, queryParams);
   useEffect(async () => {
     await fetchDevices(queryString).then((data) => setDevices(data));
   }, [paginationActive]);
 
-  // useEffect(async () => {
-  //     for (let key in queryParams){
-  //         queryString += `${key}=${queryParams[key]}&`
-  //     }
-  //     await fetchDevices(queryString).then(data => setDevices(data))
-  // }, [queryParams])
   const tableAttributes = [
     "id",
     "Ady",
@@ -37,19 +30,24 @@ const AdminDeviceTable = ({ queryParams }) => {
     "Üýtgedilen wagty",
     "Düwmeler",
   ];
-  let paginationLimit = 10;
+  let paginationLimit = 5;
   let items = [];
-  for (let number = 1; number <= devices?.count / paginationLimit; number++) {
-    items.push(
-      <Pagination.Item
+  for (
+    let number = 1;
+    number <= Math.ceil(devices.count / paginationLimit);
+    number++
+    ) {
+      items.push(
+        <Pagination.Item
         onClick={(e) => setPaginationActive(number)}
         key={number}
         active={number === paginationActive}
-      >
+        >
         {number}
       </Pagination.Item>
     );
   }
+
 
   const removeDevice = (id) => {
     deleteDevice(id).then((data) => {
@@ -79,7 +77,9 @@ const AdminDeviceTable = ({ queryParams }) => {
               {devices?.rows.map((item) => (
                 <tr key={item.id}>
                   <td className="p-1">{item.id}</td>
-                  <td style={{minWidth:'200px'}} className="p-1 text-wrap">{item.name}</td>
+                  <td style={{ minWidth: "200px" }} className="p-1 text-wrap">
+                    {item.name}
+                  </td>
                   <td className="p-1">{item.price}</td>
                   <td className="p-1">
                     {

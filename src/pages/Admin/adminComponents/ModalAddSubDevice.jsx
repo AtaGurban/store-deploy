@@ -29,7 +29,6 @@ const ModalAddDevice = ({ show, onHide, device }) => {
         formData.append('subDeviceInfo', JSON.stringify(subDeviceInfo))
         formData.append('deviceId', device.id)
         createSubDevice(formData).then(data => { onHide(); window.location.reload() })
-        // console.log(JSON.stringify(subDeviceInfo));
     }
 
   

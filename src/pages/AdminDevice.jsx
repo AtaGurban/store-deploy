@@ -1,6 +1,6 @@
 import React, { useState} from 'react'
 import { observer } from "mobx-react-lite";
-import DropType from './Admin/adminComponents/DropType';
+// import DropType from './Admin/adminComponents/DropType';
 import ModalAddDevice from './Admin/adminComponents/ModalAddDevice';
 import AdminDeviceTable from './Admin/adminComponents/AdminDeviceTable';
 
@@ -20,22 +20,16 @@ const AdminDevice = observer(() => {
     }
 
     return (
-        <div className='container'>
+        <div className='mx-5'>
             <div className="add-new-btn d-flex mt-3">
                 <button onClick={()=>setModalAddDeviceVisible(true)} className='btn btn-warning ms-auto'>Täzesini goş</button>
             </div>
             <div className="row mt-2">
-                <div className="col-3 p-3 card">
+                {/* <div className="col-3 p-3 card">
                     <h4 className='c-bold text-center'>Gerekli bölümi saýlaň</h4>
                         <DropType currentType={currentType}/>
-                    {/* <div className="d-flex">
-                        <div className='ms-auto'>
-                            <button disabled={boolBtn} className='btn btn-success'>Filtirle</button>
-                        </div>
-
-                    </div> */}
-                </div>
-                <div className="col-9 p-3">
+                </div> */}
+                <div className="col-12 p-3">
                     <AdminDeviceTable queryParams={queryParams}/>
                 </div>
             </div>

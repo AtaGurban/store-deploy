@@ -34,6 +34,7 @@ const ModalAuth = observer(({ modalAuth, setModalAuth }) => {
   const logOut = () => {
     user.setUser({});
     user.setIsAuth(false);
+    user.clearBasketProd()
     localStorage.setItem("token", "");
   };
 

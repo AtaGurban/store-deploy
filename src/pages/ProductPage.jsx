@@ -1,22 +1,56 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams } from "react-router";
 import { Spinner, Card } from "react-bootstrap";
-import ProductImgGroup from "../components/ProductImgGroup";
 import { fetchOneDevice } from "../http/deviceAPI";
 import { Context } from "..";
 import LikeProduct from "../components/LikeProduct";
 import ProductPageTab from "../components/ProductPageTab";
+import { observer } from "mobx-react-lite";
+import { toJS } from "mobx";
+import { createBasketDevice } from "../http/basketAPI";
 
-const ProductPage = () => {
+const ProductPage = observer(() => {
   const params = useParams();
   const [loading, setLoading] = useState(true);
   const [currentSubDevice, setCurrentSubDevice] = useState({});
-  const { brand } = useContext(Context);
+  const { brand, user } = useContext(Context);
   const [pageProduct, setPageProduct] = useState({});
   const [productBrand, setProductBrand] = useState({});
   const [productImg, setProductImg] = useState("");
-  const [tabDescription, setTabDescription] = useState('')
-  const [tabMoreInfo, setTabMoreInfo] = useState([])
+  const [tabDescription, setTabDescription] = useState("");
+  const [tabMoreInfo, setTabMoreInfo] = useState([]);
+  const [basketProd, setBasketProd] = useState(false);
+  const [clickBasket, setClickBasket] = useState(basketProd);
+  useEffect(() => {
+    toJS(
+      user.basketProd.map((i) => {
+        if (i.id === pageProduct.id) {
+          setBasketProd(true);
+        }
+      })
+    );
+  }, [toJS(user.basketProd)]);
+
+  
+  const clickBasketPush = () => {
+    let prodPrice =
+      currentSubDevice !== undefined ? currentSubDevice.price : pageProduct?.price;
+
+    let clone = {}
+    Object.assign(clone, pageProduct, {price: prodPrice})
+    if (!clickBasket) {
+      user.setBasketProd(clone);
+    }
+
+    if (user.user.id) {
+      const formData = new FormData();
+      formData.append("userId", user.user.id);
+      formData.append("deviceId", pageProduct.id);
+      formData.append("prodPrice", prodPrice);
+      createBasketDevice(formData);
+    }
+    setClickBasket(true);
+  };
 
   const littleImageFunc = (image) => {
     setProductImg(image);
@@ -26,8 +60,8 @@ const ProductPage = () => {
     await fetchOneDevice(params.id)
       .then((data) => {
         setPageProduct(data);
-        setTabDescription(data.device_description[0].big)
-        setTabMoreInfo(data.more_info)
+        setTabDescription(data.device_description[0].big);
+        setTabMoreInfo(data.more_info);
         setProductImg(data.deviceImg[0].name);
         setProductBrand(
           brand.Brands[0].filter((i) => {
@@ -37,8 +71,7 @@ const ProductPage = () => {
         setCurrentSubDevice(data.subDevice[0]);
       })
       .finally(() => setLoading(false));
-  }, []);
-
+  }, [params]);
 
   if (loading) {
     return (
@@ -123,20 +156,31 @@ const ProductPage = () => {
                 </Card>
               ))}
             </div>
-            <div className="little-desc">
+            <div className="little-desc mt-3">
               <h3 className="text-start c-bold mb-3">Gysga beýany</h3>
               <p className="text-start fw-normal">
                 {pageProduct?.device_description[0]?.little}
               </p>
             </div>
             <div className="product-page-basket mt-4 w-75 mx-auto">
-              <button
-                // onClick={(e) => clickBasketPush()}
-                className="btn btn-danger bg-red p-1 product-page-basket"
-              >
-                <i className="fas fa-shopping-basket me-2"></i>
-                Sebede goş
-              </button>
+              {basketProd ? (
+                <button
+                  // onClick={(e) => clickBasketPush()}
+                  disabled
+                  className="btn btn-danger bg-red p-1 product-page-basket"
+                >
+                  <i className="fas fa-shopping-basket me-2"></i>
+                  Sebetde
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => clickBasketPush()}
+                  className="btn btn-danger bg-red p-1 product-page-basket"
+                >
+                  <i className="fas fa-shopping-basket me-2"></i>
+                  Sebede goş
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -162,12 +206,19 @@ const ProductPage = () => {
             ))}
           </div>
         </div>
-        <div style={{minHeight:'400px'}} className="pb-5 d-block text-center">
-          <ProductPageTab className='' tabDescription={tabDescription} tabMoreInfo={tabMoreInfo}/>
+        <div
+          style={{ minHeight: "400px" }}
+          className="pb-5 d-block text-center"
+        >
+          <ProductPageTab
+            className=""
+            tabDescription={tabDescription}
+            tabMoreInfo={tabMoreInfo}
+          />
         </div>
       </div>
     );
   }
-};
+});
 
 export default ProductPage;

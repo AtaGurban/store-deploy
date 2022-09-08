@@ -11,6 +11,8 @@ import { fetchTypes, fetchSubTypes, fetchTitleTypes, fetchCategories } from "./h
 import { fetchBrands } from "./http/brandAPI";
 import { fetchBanners } from "./http/bannerAPI";
 import { fetchDevices } from "./http/deviceAPI";
+import Footer from "./components/Footer";
+
 
 const App = observer(() => {
   const { user, type, brand, banner, device } = useContext(Context)
@@ -22,15 +24,17 @@ const App = observer(() => {
     await fetchSubTypes().then(data => type.setSubType(data))
     await fetchBrands().then(data => brand.setBrand(data))
     await fetchBanners().then(data => banner.setBanner(data))
+    // if(user.user){
+    //   await fetchBasketDevices(user.user.id).then(data => user.setBasketProd(data))
+    // }
     await fetchDevices('?favourite=true').then(data => device.setDevice(data))
+    await fetchDevices('?newProducts=true').then(data => device.setNewProducts(data))
     check().then(data => {
       user.setUser(data)
-
       user.setIsAuth(true)
     }).finally(() => setLoading(false))
 
   }, [])
-
 
   if(loading){
   return (
@@ -42,6 +46,7 @@ const App = observer(() => {
     <BrowserRouter>
       <NavBar />
       <AppRouter />
+      <Footer/>
     </BrowserRouter>
   );
 });

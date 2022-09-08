@@ -86,7 +86,7 @@ const Auth = observer(() => {
     <div>
       {!isLogin ? (
         <Container className="auth-page align-items-center justify-content-center">
-          <Tabs id="uncontrolled-tab-example" className="auth-tab">
+          <Tabs id="uncontrolled-tab-example" className="auth-tab mx-auto justify-content-center">
             <Tab eventKey="e-mail" title="E-mail" className="auth-tab mx-auto">
               <div className="auth-page-card p-5 ">
                 <Form className="d-flex flex-column">
@@ -168,7 +168,7 @@ const Auth = observer(() => {
         </Container>
       ) : (
         <Container className="auth-page align-items-center justify-content-center">
-          <Tabs id="uncontrolled-tab-example" className="auth-tab">
+          <Tabs id="uncontrolled-tab-example" className="auth-tab mx-auto justify-content-center">
             <Tab eventKey="e-mail" title="E-mail" className="auth-tab mx-auto">
               <div className="auth-page-card p-5 ">
                 <Form className="d-flex flex-column">
